@@ -2,30 +2,43 @@ import socket
 import os, sys, io
 import html
 import urllib.parse
-from http import HTTPStatus
+import posixpath
+import mimetypes
+#from http import HTTPStatus
 
-
-HOST, PORT = '127.0.0.1', 8888
-
-listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-listen_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-listen_socket.bind((HOST, PORT))
-listen_socket.listen(1)
-print('Serving HTTP on port %s ...' % PORT)
 
 class Pyserver():
+	def run_server():
+		HOST, PORT = '0.0.0.0', 8888
+		listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		listen_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+		listen_socket.bind((HOST, PORT))
+		listen_socket.listen(1)
+		print('Serving HTTP on port %s ...' % PORT)
+		###
+		while True:
+			client_connection, client_address = listen_socket.accept()
+			request = client_connection.recv(1024)
+			print(request)
+
+    		#print(server.parse_request(request))
+    		path = server.parse_request(request)
+    		http_response = server.generalResponse()
+    		print(http_response)
+    		
+    		client_connection.sendall(http_response)
+    		client_connection.close()
+
 	def parse_request(self, request):
 		request = str(request).split(r'\r\n')# transform req. string into list
 		firstLineList = request[0].split()
-		firstLineList.self = firstLineList
+		self.firstLineList = firstLineList
 		
 		if firstLineList[1] == '/':
 			self.path = '.'
 		else:
 			self.path = '.' + firstLineList[1]
 		path = self.path
-
-
 		
 		print(path)
 		return path
@@ -59,7 +72,7 @@ class Pyserver():
 
 		for dirItem in dirItemsList:
 			nameAndPath = os.path.join(path, dirItem)
-			displayname = dirItem
+			#displayname = dirItem
 			if os.path.isdir(nameAndPath):
 				dirItem = dirItem + "/"
 
@@ -73,14 +86,44 @@ class Pyserver():
 		#f.seek(0) ### ?
 		return responseString
 
-	#def response(self):
+	def generalResponse(self):
+		if os.path.isdir(self.path):#if dir
+			if 'index.html' in os.listdir(self.path): #check out index.html in direct.
+				f = open("index.html", "rb")
+				response = f.read()
+				f.close()
+				return response
+			else:
+				return self.dirListing(self.path)
+		elif not os.path.isdir(self.path):#if requested not dir
+			path = self.path
+			filename = path.split('/')[-1]
+			fileMimeType = mimetypes.guess_type(filename)[0]
+			if fileMimeType == None:
+				fileMimeType = 'application/octet-stream'
+			print(path, filename, fileMimeType)
+			#send 
+			self.client_connection.sendall(fileMimeType.encode(self.sysEncoding))
+			f = open(filename, 'rb')
+			response = f.read()
+			f.close()
+			return response
+			
+		else:
+			print("generalResponse() not work")
+			
+				
+			#return self.dirListing(self.path)
+		
 
 
 
 
 
 server = Pyserver()
+server.run_server()
 
+"""
 while True:
     client_connection, client_address = listen_socket.accept()
     request = client_connection.recv(1024)
@@ -89,15 +132,13 @@ while True:
     #print(server.parse_request(request))
     path = server.parse_request(request)
 
-    try:
-    	if 'index.html' in os.listdir(path):
-    		f = open("index.html", "rb")
-    		http_response = f.read()
-    		f.close()
-    	else:
-    		http_response = server.dirListing(path)
-    except FileNotFoundError:
-    	pass
-
+    http_response = server.generalResponse()
+    print(http_response)
     client_connection.sendall(http_response)
     client_connection.close()
+    #	print("server error")
+    #	pass
+
+    #client_connection.sendall(http_response)
+    #client_connection.close()
+"""
