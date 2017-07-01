@@ -32,16 +32,19 @@ class simpleServer():
         pageItemsList = []
         displaypath = urllib.parse.unquote(path)
         #showDir = html.escape(displaypath, quote=False)
-        title = '<head><title>Directory listing for %s </title></head>' % displaypath
+        title = '<!DOCTYPE html>\
+        		<html>\
+        		<head><title>Directory listing for %s </title></head><body>' % displaypath
+        pageItemsList.append(title)
         dirItemsList = os.listdir(path)
         
         for dirItem in dirItemsList:
             nameAndPath = os.path.join(path, dirItem)
             if os.path.isdir(nameAndPath): dirItem=dirItem+"/"
-            pageItemsList.append(title)
             pageItemsList.append('<li><a href="%s">%s</a></li>'
             % (urllib.parse.quote(dirItem), html.escape(dirItem, quote=False)))
-        
+        pageItemsList.append('</body></html>')
+
         self.lastItemInPath = 'index.html'
         self.dataForResponse = '\n'.join(pageItemsList)
         self.response()
@@ -51,16 +54,26 @@ class simpleServer():
         if path == '/':
             path = '.'
             if 'index.html' in os.listdir(path):
-                lastItemInPath = 'index.html'
-                self.lastItemInPath = lastItemInPath
-                f = open("index.html", "r")
-                self.dataForResponse = f.read()
-                f.close()
-                self.response()
+            	lastItemInPath = 'index.html'
+            	self.lastItemInPath = lastItemInPath
+            	f = open("index.html", "r")
+            	self.dataForResponse = f.read()
+            	f.close()
+            	self.response()
             else:
-                self.getListDir(path)
+            	self.getListDir(path)
         elif path == '/favicon.ico':
-            pass
+        	path = '.'
+        	if 'index.html' in os.listdir(path):
+        		lastItemInPath = 'index.html'
+        		self.lastItemInPath = lastItemInPath
+        		f = open("index.html", "r")
+        		self.dataForResponse = f.read()
+        		f.close()
+        		self.response()
+        	else:
+        		self.getListDir(path)
+
         else:
             raw_lastItemInPath = path.split('/')
             if raw_lastItemInPath == '':
