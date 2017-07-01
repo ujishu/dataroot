@@ -1,7 +1,9 @@
 import socket
-import os, sys, io
+import os
+import sys
+import io
 import html
-import urllib.parse
+from urllib import parse
 import posixpath
 import mimetypes
 #from http import HTTPStatus
@@ -9,7 +11,7 @@ import mimetypes
 
 class Pyserver():
 	def run_server():
-		HOST, PORT = '0.0.0.0', 8888
+		HOST, PORT = '0.0.0.0', 8080
 		listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		listen_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		listen_socket.bind((HOST, PORT))
@@ -61,8 +63,7 @@ class Pyserver():
 
 		### html page preparing 
 		title = 'Directory listing for %s' % displaypath
-		pageList.append('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" '
-                 '"http://www.w3.org/TR/html4/strict.dtd">')
+		pageList.append('<!DOCTYPE HTML>')
 		pageList.append('<html>\n<head>')
 		pageList.append('<meta http-equiv="Content-Type" '
                  'content="text/html; charset=%s">' % sysEncoding)
