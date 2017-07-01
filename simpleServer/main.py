@@ -8,10 +8,22 @@ import posixpath
 import mimetypes
 #from http import HTTPStatus
 
+def args():
+	args = sys.argv
+	if len(args) == 1:
+		host, port = '0.0.0.0', 8888
+	if len(args) == 2:
+		host, port = '0.0.0.0', args[1]
+	return host, int(port)
 
 class Pyserver():
+HEAD
 	def run_server():
 		HOST, PORT = '0.0.0.0', 8080
+	def run_server(self,host=None,port=None):
+		
+		HOST, PORT = host, port
+b5fbd488488fcfa9f2e0da70834f12c6b509bb50
 		listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		listen_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 		listen_socket.bind((HOST, PORT))
@@ -20,29 +32,31 @@ class Pyserver():
 		###
 		while True:
 			client_connection, client_address = listen_socket.accept()
+			self.client_connection = client_connection
 			request = client_connection.recv(1024)
-			print(request)
-
-    		#print(server.parse_request(request))
-    		path = server.parse_request(request)
-    		http_response = server.generalResponse()
-    		print(http_response)
-    		
-    		client_connection.sendall(http_response)
-    		client_connection.close()
+			print("REQUEST > ", request)
+			path = self.parse_request(request)
+			http_response = self.generalResponse()
+			print("RESPONSE > ", http_response)
+			self.client_connection.sendall(http_response)
+			client_connection.close()
 
 	def parse_request(self, request):
-		request = str(request).split(r'\r\n')# transform req. string into list
-		firstLineList = request[0].split()
-		self.firstLineList = firstLineList
-		
-		if firstLineList[1] == '/':
-			self.path = '.'
-		else:
-			self.path = '.' + firstLineList[1]
+		try:
+			request = str(request).split(r'\r\n')# transform req. string into list
+			firstLineList = request[0].split()
+			self.firstLineList = firstLineList
+			if firstLineList[1] == '/':
+				self.path = '.'
+			else:
+				self.path = '.' + firstLineList[1]
+		except:
+			print("error during parse_request()")
+			pass
+
 		path = self.path
 		
-		print(path)
+		#print(path)
 		return path
 
 	def dirListing(self, path): #in case when index.html absent
@@ -59,14 +73,14 @@ class Pyserver():
 			displaypath = urllib.parse.unquote(path)
 
 		showDir = html.escape(displaypath, quote=False)
-		sysEncoding = sys.getfilesystemencoding()
+		self.sysEncoding = sys.getfilesystemencoding()
 
 		### html page preparing 
 		title = 'Directory listing for %s' % displaypath
 		pageList.append('<!DOCTYPE HTML>')
 		pageList.append('<html>\n<head>')
 		pageList.append('<meta http-equiv="Content-Type" '
-                 'content="text/html; charset=%s">' % sysEncoding)
+                 'content="text/html; charset=%s">' % self.sysEncoding)
 		pageList.append('<title>%s</title>\n</head>' % title)
 		pageList.append('<body>\n<h1>%s</h1>' % title)
 		pageList.append('<hr>\n<ul>')
@@ -81,10 +95,7 @@ class Pyserver():
 				% (urllib.parse.quote(dirItem), html.escape(dirItem, quote=False)))
 		###
 
-		responseString = '\n'.join(pageList).encode(sysEncoding)
-		#f = io.BytesIO()
-		#f.write(responseString)
-		#f.seek(0) ### ?
+		responseString = '\n'.join(pageList).encode(self.sysEncoding)
 		return responseString
 
 	def generalResponse(self):
@@ -99,16 +110,23 @@ class Pyserver():
 		elif not os.path.isdir(self.path):#if requested not dir
 			path = self.path
 			filename = path.split('/')[-1]
+			if filename == "favicon.ico":
+				pass
 			fileMimeType = mimetypes.guess_type(filename)[0]
 			if fileMimeType == None:
 				fileMimeType = 'application/octet-stream'
 			print(path, filename, fileMimeType)
 			#send 
-			self.client_connection.sendall(fileMimeType.encode(self.sysEncoding))
-			f = open(filename, 'rb')
-			response = f.read()
-			f.close()
-			return response
+			self.client_connection.sendall(fileMimeType.encode(sys.getfilesystemencoding()))
+			try:
+				f = open(filename, 'rb')
+				response = f.read()
+				f.close()
+				return response
+			except FileNotFoundError:
+				print("FileNotFoundError")
+				return b'<!DOCTYPE html>\n<html>\n<head>\n<title>404</title>\n</head>\n\
+				<body>\n\n<p>File not found</p>\n\n</body>\n</html>'
 			
 		else:
 			print("generalResponse() not work")
@@ -122,7 +140,9 @@ class Pyserver():
 
 
 server = Pyserver()
-server.run_server()
+host = args()[0]
+port = args()[1]
+server.run_server(host, port)
 
 """
 while True:
