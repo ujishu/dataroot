@@ -3,7 +3,7 @@ from mainModule import simpleServer
 
 simpleServer = simpleServer()
 
-HOST, PORT = '127.0.0.1', 8080
+HOST, PORT = '0.0.0.0', 8080
 
 listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 listen_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
