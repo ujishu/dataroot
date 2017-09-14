@@ -1,11 +1,5 @@
-confusion = {}
-confusion[1] = 1
-confusion['1'] = 2
-confusion[1] += 1
-
-sum = 0
-for k in confusion:
-    sum += confusion[k]
-
-print sum
-print confusion
+import os
+path = '/'
+print(os.listdir('./cat/'))
+print(os.path)
+print(os.path.isdir('./cat/'))

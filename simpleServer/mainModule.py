@@ -8,33 +8,52 @@ from os import listdir
 
 
 class simpleServer():
-    
+    template_404 = '<!DOCTYPE html><html><head>\
+				<meta http-equiv="content-type" content="text/html; charset=utf-8" />\
+                <link rel="icon" href="//i3.i.ua/css/i2/favicon_16.ico" type="image/x-icon">\
+                <title>404</title>\
+                </head><body><h1>404 File not found</h1></body></html>'
+
+    #sysEncoding = 'utf-8'
+	
     def response(self, *arg):
-        arg = ['200 OK']
-        if arg[0] != '404 Not Found':
+        arg = (' 200 OK')
+        sysEncoding = 'utf-8'
+
+        if arg[0] == ' 200 OK':
             protocol = self.protocol
-            status = '200 OK'
+            status = arg[0]
+            ps = protocol + status
             contentType = mimetypes.guess_type(self.lastItemInPath)[0]
-            dataForResponse = self.dataForResponse
-            sysEncoding = sys.getfilesystemencoding()
-            completeResponse = '\r\n'.join([protocol, status, contentType, dataForResponse]).encode(sysEncoding)
-            return completeResponse
-        if arg[0] == '404 Not Found':
+            if type(self.dataForResponse) != 'bytes':
+                responseBody = self.dataForResponse.encode(sysEncoding)
+            else:
+                responseBody = self.dataForResponse
+            responseHeader = ('\r\n'.join([ps, contentType, '\r\n'])).encode(sysEncoding)
+            return responseHeader, responseBody
+			
+        if arg[0] == ' 404 Not Found':
             protocol = self.protocol
-            status = '404 Not Found'
+            status = arg[0]
+            ps = protocol + status
             contentType = 'text/html'
-            dataForResponse = '<p>404 Not found</p>'
-            sysEncoding = sys.getfilesystemencoding()
-            completeResponse = '\r\n'.join([protocol, status, contentType, dataForResponse]).encode(sysEncoding)
-            return completeResponse
-    
+            responseBody = template_404.encode(sysEncoding)
+            responseHeader = ('\r\n'.join([ps, contentType, '\r\n'])).encode(sysEncoding)
+            return responseHeader, responseBody
+			
+    def completeResponse(self):
+        pass
+		
     def getListDir(self, path):
         pageItemsList = []
         displaypath = urllib.parse.unquote(path)
         #showDir = html.escape(displaypath, quote=False)
         title = '<!DOCTYPE html>\
         		<html>\
-        		<head><title>Directory listing for %s </title></head><body>' % displaypath
+        		<head>\
+				<meta http-equiv="content-type" content="text/html; charset=utf-8" />\
+                <link rel="icon" href="//i3.i.ua/css/i2/favicon_16.ico" type="image/x-icon">\
+				<title>Directory listing for %s </title></head><body>' % displaypath
         pageItemsList.append(title)
         dirItemsList = os.listdir(path)
         
@@ -43,65 +62,31 @@ class simpleServer():
             if os.path.isdir(nameAndPath): dirItem=dirItem+"/"
             pageItemsList.append('<li><a href="%s">%s</a></li>'
             % (urllib.parse.quote(dirItem), html.escape(dirItem, quote=False)))
-        pageItemsList.append('</body></html>')
+        pageItemsList.append('</body></html>\r\n')
 
         self.lastItemInPath = 'index.html'
         self.dataForResponse = '\n'.join(pageItemsList)
-        self.response()
+        self.response((' 200 OK'))
 
     def do_GET(self, path):
         #need check what requested : file or dir
-        if path == '/':
-            path = '.'
+        path = '.' + path
+        if path[-1] == '/':
             if 'index.html' in os.listdir(path):
             	lastItemInPath = 'index.html'
             	self.lastItemInPath = lastItemInPath
-            	f = open("index.html", "r")
+            	f = open("index.html", "rb")
             	self.dataForResponse = f.read()
             	f.close()
-            	self.response()
-            else:
+            	self.response(' 200 OK')
+            else:				
             	self.getListDir(path)
-        elif path == '/favicon.ico':
-        	path = '.'
-        	if 'index.html' in os.listdir(path):
-        		lastItemInPath = 'index.html'
-        		self.lastItemInPath = lastItemInPath
-        		f = open("index.html", "r")
-        		self.dataForResponse = f.read()
-        		f.close()
-        		self.response()
-        	else:
-        		self.getListDir(path)
-
         else:
-            raw_lastItemInPath = path.split('/')
-            if raw_lastItemInPath == '':
-                lastItemInPath = raw_lastItemInPath[-2]
-            else:
-                lastItemInPath = raw_lastItemInPath[-1]
-            #check is it file or dir
-            self.lastItemInPath = lastItemInPath
-            lastItemAndOsPath = os.path.join(path, lastItemInPath)
-            
-            if os.path.isdir(lastItemAndOsPath):
-                lastItemAndOsPath += '/'
-                if 'index.html' in os.listdir(lastItemAndOsPath):
-                    f = open("index.html", "r")
-                    self.dataForResponse = f.read()
-                    f.close()
-                    self.response()
-                else:self.getListDir(lastItemAndOsPath)
-            else:
-                f = open(lastItemInPath, "r")
-                self.dataForResponse = f.read()
-                f.close()
-                self.response()
-            
-                
-        
-        
-        
+            f = open(path, "rb")
+            self.dataForResponse = f.read()
+            f.close()
+            self.response(' 200 OK')
+			
     def handleRequest(self, request):
         requestHearesList = str(request).split(r'\r\n')
         self.reqMethod = requestHearesList[0].split()[0]
@@ -109,8 +94,33 @@ class simpleServer():
         self.protocol = requestHearesList[0].split()[2]
         
         if "GET" in self.reqMethod:
-            self.do_GET(path = self.path)
-        
+            self.do_GET(path = self.path) 
         else:
             #TO DO
             pass
+#
+"""
+		else:
+            raw_lastItemInPath = path.split('/')
+            if raw_lastItemInPath == '':
+                lastItemInPath = raw_lastItemInPath[-2]
+            else:
+                lastItemInPath = raw_lastItemInPath[-1]
+            #check is it file or dir
+            self.lastItemInPath = lastItemInPath # /cat/t.jpg
+                        
+            if os.path.isdir(lastItemAndOsPath):
+                lastItemAndOsPath += '/'
+                if 'index.html' in os.listdir(lastItemAndOsPath):
+                    f = open("index.html", "r")
+                    self.dataForResponse = f.read()
+                    f.close()
+                    self.response()
+                else:self.getListDir(lastItemAndOsPath) 
+        else:
+            f = open(path, "r")
+            self.dataForResponse = f.read()
+            f.close()
+            self.response()
+"""
+
