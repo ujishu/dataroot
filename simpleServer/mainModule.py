@@ -69,12 +69,14 @@ class simpleServer(object):
                 self.response()
             else:
                 self.getListDir(path)
-        elif path == '/favicon.ico':
-            self.status = '404 File not found'
-            self.connection = 'Connection: close'
-            self.contentType = 'image/x-icon; charset=utf-8' 
-            self.dataForResponse = ''.encode('utf-8')
-            self.response()
+        #	
+        #elif path == '/favicon.ico':
+        #    self.status = '404 File not found'
+        #    self.connection = 'Connection: close'
+        #    self.contentType = 'image/x-icon; charset=utf-8' 
+        #    self.dataForResponse = ''.encode('utf-8')
+        #    self.response()
+        #
         else:
             pathToList = path.split('/')
             if pathToList[-1] == '':
