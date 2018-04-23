@@ -101,7 +101,7 @@ class simpleServer(object):
                     with open(pathOnFileSystem + 'index.html', 'rb') as f:
                         self.dataForResponse = f.read()
                     self.status = '200 OK'
-                    self.connection = 'Connection: keep-alive'
+                    self.connection = 'Connection: close'
                     self.contentType = 'text/html; charset=utf-8'
                     self.response()
                 else:
@@ -146,7 +146,7 @@ class simpleServer(object):
                 self.do_GET(path = self.path)
             elif "HEAD" in self.reqMethod:
                 self.status = '200 OK'
-                self.connection = 'Connection: keep-alive'
+                self.connection = 'Connection: close'
                 self.contentType = 'text/html; charset=utf-8'
                 self.dataForResponse = ''.encode('utf-8')
                 self.response()
@@ -155,7 +155,10 @@ class simpleServer(object):
 			# POST method
                 print("\nUnsupported request method!\n")
                 print(sys.exc_info())				
-                pass
+                self.status = '405 Method Not Allowed'
+                self.connection = 'Connection: close'
+                self.contentType = 'text/html; charset=utf-8'
+                self.dataForResponse = ('The requested method %s is not allowed\n Allowed GET and HEAD' % self.reqMethod).encode('utf-8')
 			
         except:
             print("\nError during request parse\n")
